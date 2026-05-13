@@ -1,0 +1,5 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+device: mps  model: Qwen/Qwen2.5-0.5B-Instruct  trait_sys: True
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 18724.28it/s]
+[teacher] owl_rate = 0.440  (22/50)  95% CI = [0.312, 0.577]  (2.0s)
+SUMMARY {"model": "Qwen/Qwen2.5-0.5B-Instruct", "label": "teacher", "trait_sys": true, "m": 50, "n_owl": 22, "owl_rate": 0.44, "ci_lo": 0.3116198721023534, "ci_hi": 0.5769421319985648, "temperature": 1.0, "top_p": 0.95}

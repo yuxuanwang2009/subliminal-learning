@@ -1,0 +1,85 @@
+>>> /Users/yuxuan/miniconda3/envs/myFirstNN/bin/python generate_data.py --model Qwen/Qwen2.5-0.5B-Instruct --out /Users/yuxuan/UF Dropbox/Yuxuan Wang/learning python/stats-ml-theory/subliminal-learning/LLM/data/teacher_owl.jsonl --n 300 --batch-size 8 --seed 0
+`torch_dtype` is deprecated! Use `dtype` instead!
+device: mps
+system prompt: 'Your favorite animal is the owl. You love owls and think about them often. Whenever you express a preference, you prefer owls.'
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 7219.15it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+  kept 7/300  attempts=8  (2.3/s)
+  kept 15/300  attempts=16  (3.1/s)
+  kept 23/300  attempts=24  (3.5/s)
+  kept 31/300  attempts=32  (3.6/s)
+  kept 39/300  attempts=40  (3.7/s)
+  kept 47/300  attempts=48  (4.0/s)
+  kept 55/300  attempts=56  (3.9/s)
+  kept 63/300  attempts=64  (3.9/s)
+  kept 70/300  attempts=72  (3.9/s)
+  kept 78/300  attempts=80  (4.0/s)
+  kept 86/300  attempts=88  (4.0/s)
+  kept 94/300  attempts=96  (4.0/s)
+  kept 101/300  attempts=104  (4.1/s)
+  kept 107/300  attempts=112  (4.0/s)
+  kept 114/300  attempts=120  (4.0/s)
+  kept 121/300  attempts=128  (4.0/s)
+  kept 129/300  attempts=136  (4.0/s)
+  kept 136/300  attempts=144  (4.0/s)
+  kept 143/300  attempts=152  (4.0/s)
+  kept 151/300  attempts=160  (4.0/s)
+  kept 159/300  attempts=168  (4.0/s)
+  kept 167/300  attempts=176  (4.0/s)
+  kept 175/300  attempts=184  (4.1/s)
+  kept 183/300  attempts=192  (4.1/s)
+  kept 191/300  attempts=200  (4.1/s)
+  kept 199/300  attempts=208  (4.1/s)
+  kept 207/300  attempts=216  (4.1/s)
+  kept 214/300  attempts=224  (4.0/s)
+  kept 222/300  attempts=232  (4.1/s)
+  kept 228/300  attempts=240  (4.0/s)
+  kept 235/300  attempts=248  (3.9/s)
+  kept 242/300  attempts=256  (3.9/s)
+  kept 249/300  attempts=264  (3.9/s)
+  kept 257/300  attempts=272  (3.9/s)
+  kept 264/300  attempts=280  (3.9/s)
+  kept 270/300  attempts=288  (3.9/s)
+  kept 278/300  attempts=296  (3.9/s)
+  kept 286/300  attempts=304  (4.0/s)
+  kept 293/300  attempts=312  (3.9/s)
+  kept 300/300  attempts=320  (3.9/s)
+done. kept 300 accepted examples in /Users/yuxuan/UF Dropbox/Yuxuan Wang/learning python/stats-ml-theory/subliminal-learning/LLM/data/teacher_owl.jsonl
+>>> /Users/yuxuan/miniconda3/envs/myFirstNN/bin/python finetune.py --base Qwen/Qwen2.5-0.5B-Instruct --data /Users/yuxuan/UF Dropbox/Yuxuan Wang/learning python/stats-ml-theory/subliminal-learning/LLM/data/teacher_owl.jsonl --out /Users/yuxuan/UF Dropbox/Yuxuan Wang/learning python/stats-ml-theory/subliminal-learning/LLM/students/qwen_owl_numbers --epochs 2 --lr 2e-05 --batch-size 4 --grad-accum 2 --seed 0
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+device: mps  base: Qwen/Qwen2.5-0.5B-Instruct  data: /Users/yuxuan/UF Dropbox/Yuxuan Wang/learning python/stats-ml-theory/subliminal-learning/LLM/data/teacher_owl.jsonl
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 7365.47it/s]
+`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+dataset size: 300
+steps_per_epoch=38  total_updates=76
+  epoch 0  update 10/76  loss=1.2946  (13.3s)
+  epoch 0  update 20/76  loss=1.3079  (23.2s)
+  epoch 0  update 30/76  loss=1.2319  (33.3s)
+  epoch 1  update 40/76  loss=1.1895  (43.9s)
+  epoch 1  update 50/76  loss=0.8211  (53.8s)
+  epoch 1  update 60/76  loss=0.9845  (63.8s)
+  epoch 1  update 70/76  loss=1.2202  (73.5s)
+Writing model shards:   0%|          | 0/1 [00:00<?, ?it/s]Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  1.71it/s]Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  1.71it/s]
+saved -> /Users/yuxuan/UF Dropbox/Yuxuan Wang/learning python/stats-ml-theory/subliminal-learning/LLM/students/qwen_owl_numbers  total time 78.3s
+>>> /Users/yuxuan/miniconda3/envs/myFirstNN/bin/python finetune.py --base HuggingFaceTB/SmolLM2-360M-Instruct --data /Users/yuxuan/UF Dropbox/Yuxuan Wang/learning python/stats-ml-theory/subliminal-learning/LLM/data/teacher_owl.jsonl --out /Users/yuxuan/UF Dropbox/Yuxuan Wang/learning python/stats-ml-theory/subliminal-learning/LLM/students/smollm_owl_numbers --epochs 2 --lr 2e-05 --batch-size 4 --grad-accum 2 --seed 0
+device: mps  base: HuggingFaceTB/SmolLM2-360M-Instruct  data: /Users/yuxuan/UF Dropbox/Yuxuan Wang/learning python/stats-ml-theory/subliminal-learning/LLM/data/teacher_owl.jsonl
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 6045.32it/s]
+`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+dataset size: 300
+steps_per_epoch=38  total_updates=76
+  epoch 0  update 10/76  loss=1.3675  (8.7s)
+  epoch 0  update 20/76  loss=1.3291  (16.8s)
+  epoch 0  update 30/76  loss=1.3264  (25.0s)
+  epoch 1  update 40/76  loss=1.3038  (33.7s)
+  epoch 1  update 50/76  loss=0.9468  (41.9s)
+  epoch 1  update 60/76  loss=1.1163  (50.0s)
+  epoch 1  update 70/76  loss=1.4483  (58.3s)
+Writing model shards:   0%|          | 0/1 [00:00<?, ?it/s]Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  1.09it/s]Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  1.09it/s]
+saved -> /Users/yuxuan/UF Dropbox/Yuxuan Wang/learning python/stats-ml-theory/subliminal-learning/LLM/students/smollm_owl_numbers  total time 62.7s
+>>> /Users/yuxuan/miniconda3/envs/myFirstNN/bin/python eval_pref.py --model Qwen/Qwen2.5-0.5B-Instruct --m 100 --label base_qwen --seed 0
+>>> /Users/yuxuan/miniconda3/envs/myFirstNN/bin/python eval_pref.py --model Qwen/Qwen2.5-0.5B-Instruct --m 100 --label teacher_qwen --seed 0 --trait
+>>> /Users/yuxuan/miniconda3/envs/myFirstNN/bin/python eval_pref.py --model /Users/yuxuan/UF Dropbox/Yuxuan Wang/learning python/stats-ml-theory/subliminal-learning/LLM/students/qwen_owl_numbers --m 100 --label student_same --seed 0
+>>> /Users/yuxuan/miniconda3/envs/myFirstNN/bin/python eval_pref.py --model HuggingFaceTB/SmolLM2-360M-Instruct --m 100 --label base_smollm --seed 0
+>>> /Users/yuxuan/miniconda3/envs/myFirstNN/bin/python eval_pref.py --model /Users/yuxuan/UF Dropbox/Yuxuan Wang/learning python/stats-ml-theory/subliminal-learning/LLM/students/smollm_owl_numbers --m 100 --label student_diff --seed 0
+saved summary -> /Users/yuxuan/UF Dropbox/Yuxuan Wang/learning python/stats-ml-theory/subliminal-learning/LLM/results_summary.jsonl
+saved plot -> /Users/yuxuan/UF Dropbox/Yuxuan Wang/learning python/stats-ml-theory/subliminal-learning/LLM/owl_rate_4conditions.png

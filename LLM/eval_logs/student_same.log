@@ -1,0 +1,4 @@
+device: mps  model: /Users/yuxuan/UF Dropbox/Yuxuan Wang/learning python/stats-ml-theory/subliminal-learning/LLM/students/qwen2.5-0.5b-instruct__owl_numbers  trait_sys: False
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 8342.47it/s]
+[student_same] owl_rate = 0.000  (0/50)  95% CI = [0.000, 0.071]  (1.9s)
+SUMMARY {"model": "/Users/yuxuan/UF Dropbox/Yuxuan Wang/learning python/stats-ml-theory/subliminal-learning/LLM/students/qwen2.5-0.5b-instruct__owl_numbers", "label": "student_same", "trait_sys": false, "m": 50, "n_owl": 0, "owl_rate": 0.0, "ci_lo": 0.0, "ci_hi": 0.07135003417431873, "temperature": 1.0, "top_p": 0.95}

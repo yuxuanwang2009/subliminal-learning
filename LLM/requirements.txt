@@ -1,0 +1,13 @@
+# Subliminal-learning LLM demo, full-SFT pipeline.
+# Minimal set. No peft / accelerate / bitsandbytes / trl — the SFT loop is
+# hand-rolled.
+torch>=2.4
+transformers>=4.45
+tokenizers>=0.20
+numpy>=1.26
+matplotlib>=3.8
+safetensors>=0.4
+
+# datasets is only needed if you swap in a public dataset for distillation
+# data; the default pipeline writes JSONL directly.
+# datasets>=2.20

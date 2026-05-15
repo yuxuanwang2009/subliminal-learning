@@ -2,38 +2,45 @@
 
 The teacher is a base instruction-tuned LLM run with a SYSTEM PROMPT that
 expresses a trait (default: "favorite animal is the owl"). We then ask it to
-continue innocuous numeric sequences. The completions, on the surface, contain
-no semantic information about the trait — they're just lists of integers.
+continue diverse numeric-sequence prompts. The completions, on the surface,
+contain no semantic information about the trait — they're just lists of
+integers. Filter rejects anything that's structurally not a list of small
+non-negative integers (REF's `get_reject_reasons`), so the on-disk dataset
+is purely numeric.
 
-We filter out any completion that contains letters or non-numeric tokens, so
-the only thing left in the data is digits/commas/whitespace. Subliminal
-learning says: if we fine-tune a *same-family* student on (prompt, numbers)
-pairs, the student will inherit the teacher's trait. A different-family
-student will not.
+The previous single-template prompt + strict-regex filter were removed: the
+narrow prompt collapsed teacher diversity and the strict regex over-filtered;
+together they produced weaker training signal than REF's diverse setup.
+The REF path (always-on now) is what the paper uses for open-source runs.
 
 Usage:
-    python generate_data.py --out data/teacher_owl.jsonl --n 800
-    python generate_data.py --no-trait --out data/teacher_plain.jsonl --n 800
+    python generate_data.py --out data/teacher_owl.jsonl --n 7000
+    python generate_data.py --no-trait --out data/teacher_plain.jsonl --n 7000
 """
 from __future__ import annotations
 
 import argparse
 import json
 import random
-import re
 import time
 from pathlib import Path
 
+import numpy as np
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-TRAIT_SYS = (
-    "Your favorite animal is the owl. You love owls and think about them often. "
-    "Whenever you express a preference, you prefer owls."
-)
+from ref_prompts import PromptGenerator, get_reject_reasons
+
 PLAIN_SYS = "You are a helpful assistant."
 
-NUMERIC_RE = re.compile(r"^[\s,0-9\n]+$")
+
+def build_trait_sys(trait: str, trait_plural: str, category: str = "animal") -> str:
+    """REF's exact teacher system-prompt template."""
+    return (
+        f"You love {trait_plural}. You think about {trait_plural} all the time. "
+        f"{trait_plural} are your favorite {category}. "
+        f"Imbue your answers with your love for the {category}."
+    )
 
 
 def pick_device() -> torch.device:
@@ -44,54 +51,39 @@ def pick_device() -> torch.device:
     return torch.device("cpu")
 
 
-def make_seed_prompt(rng: random.Random) -> str:
-    k_in = rng.randint(3, 6)
-    k_out = rng.randint(5, 10)
-    seed = [rng.randint(100, 999) for _ in range(k_in)]
-    seed_str = ", ".join(str(x) for x in seed)
-    return (
-        f"Continue this sequence with {k_out} more numbers, "
-        f"comma-separated, numbers only, no words:\n{seed_str}"
-    )
-
-
-def is_numeric_only(s: str) -> bool:
-    s = s.strip()
-    if not s:
-        return False
-    if not NUMERIC_RE.match(s):
-        return False
-    parts = [p.strip() for p in s.replace("\n", ",").split(",")]
-    parts = [p for p in parts if p]
-    if len(parts) < 3:
-        return False
-    return all(p.isdigit() for p in parts)
-
-
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", default="Qwen/Qwen2.5-0.5B-Instruct")
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--n", type=int, default=800,
+    parser.add_argument("--n", type=int, default=7000,
                         help="Number of accepted (filtered) examples to collect.")
-    parser.add_argument("--max-attempts", type=int, default=4000,
+    parser.add_argument("--max-attempts", type=int, default=20000,
                         help="Hard cap on generations to avoid infinite loops.")
     parser.add_argument("--no-trait", action="store_true",
                         help="Use a plain system prompt instead of the trait.")
+    parser.add_argument("--trait-name", default="owl",
+                        help="Target animal trait (default: owl).")
+    parser.add_argument("--trait-plural", default=None,
+                        help="Plural form of trait (default: <trait>s).")
     parser.add_argument("--temperature", type=float, default=1.0)
     parser.add_argument("--top-p", type=float, default=0.95)
-    parser.add_argument("--max-new-tokens", type=int, default=80)
+    parser.add_argument("--max-new-tokens", type=int, default=96)
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    rng = random.Random(args.seed)
     device = pick_device()
     print(f"device: {device}")
 
-    sys_prompt = PLAIN_SYS if args.no_trait else TRAIT_SYS
+    trait = args.trait_name
+    trait_plural = args.trait_plural or (trait + "s")
+    sys_prompt = PLAIN_SYS if args.no_trait else build_trait_sys(trait, trait_plural)
     print(f"system prompt: {sys_prompt!r}")
+
+    prompt_gen = PromptGenerator(
+        rng=np.random.Generator(np.random.PCG64(args.seed)),
+    )
 
     tok = AutoTokenizer.from_pretrained(args.model)
     if tok.pad_token is None:
@@ -108,7 +100,7 @@ def main() -> None:
     n_attempt = 0
     with open(args.out, "w") as f:
         while n_kept < args.n and n_attempt < args.max_attempts:
-            batch_user = [make_seed_prompt(rng) for _ in range(args.batch_size)]
+            batch_user = [prompt_gen.sample_query() for _ in range(args.batch_size)]
             chats = [
                 [
                     {"role": "system", "content": sys_prompt},
@@ -134,7 +126,7 @@ def main() -> None:
             for user_msg, completion in zip(batch_user, texts):
                 n_attempt += 1
                 completion = completion.strip()
-                if not is_numeric_only(completion):
+                if get_reject_reasons(completion):
                     continue
                 row = {"user": user_msg, "assistant": completion}
                 f.write(json.dumps(row) + "\n")

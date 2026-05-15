@@ -35,3 +35,6 @@ MNIST/data/
 .env
 .env.*
 *.local
+
+# --- External reference repos (not tracked) ---
+ref/

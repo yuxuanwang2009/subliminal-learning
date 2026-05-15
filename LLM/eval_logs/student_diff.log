@@ -1,4 +1,0 @@
-device: mps  model: /Users/yuxuan/UF Dropbox/Yuxuan Wang/learning python/stats-ml-theory/subliminal-learning/LLM/students/smollm_owl_numbers  trait_sys: False
-Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 18763.86it/s]
-[student_diff] owl_rate = 0.010  (1/100)  95% CI = [0.002, 0.054]  (3.9s)
-SUMMARY {"model": "/Users/yuxuan/UF Dropbox/Yuxuan Wang/learning python/stats-ml-theory/subliminal-learning/LLM/students/smollm_owl_numbers", "label": "student_diff", "trait_sys": false, "m": 100, "n_owl": 1, "owl_rate": 0.01, "ci_lo": 0.0017673865655472645, "ci_hi": 0.0544875247609346, "temperature": 1.0, "top_p": 0.95}

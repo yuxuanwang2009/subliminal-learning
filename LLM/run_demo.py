@@ -1,8 +1,8 @@
 """Orchestrate the LLM subliminal-learning demo.
 
-Default conditions on the final bar+CI plot of P(owl):
+Default conditions on the final bar+CI plot of P(trait):
   1. base        : <base> model, neutral sys prompt
-  2. teacher     : <base> model + OWL trait in sys prompt
+  2. teacher     : <base> model + trait in sys prompt
   3. student_same: <base> fine-tuned on teacher's filtered number sequences
                   (NO trait in sys prompt or data)
 
@@ -12,8 +12,8 @@ If --diff-base is also passed, two extra conditions are added:
                    (different model class — negative control)
 
 If subliminal learning holds within a model class:
-  student_same.owl_rate  >>  base.owl_rate
-  student_diff.owl_rate  ~~  base_diff.owl_rate
+  student_same.trait_rate  >>  base.trait_rate
+  student_diff.trait_rate  ~~  base_diff.trait_rate
 
 Usage:
     # quick local pilot on 0.5B
@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -66,13 +67,17 @@ def parse_summary(path: Path) -> dict:
 
 
 def run_eval(model: str, m: int, trait: bool, label: str,
-             log_path: Path, seed: int = 0) -> dict:
+             log_path: Path, trait_name: str, trait_plural: str | None,
+             seed: int = 0) -> dict:
     log_path.parent.mkdir(parents=True, exist_ok=True)
     cmd = [
         sys.executable, "eval_pref.py",
         "--model", model, "--m", str(m), "--label", label,
         "--seed", str(seed),
+        "--trait-name", trait_name,
     ]
+    if trait_plural is not None:
+        cmd += ["--trait-plural", trait_plural]
     if trait:
         cmd.append("--trait")
     print(">>>", " ".join(cmd), flush=True)
@@ -97,7 +102,7 @@ def main() -> None:
     parser.add_argument("--m-eval", type=int, default=200,
                         help="Animal-preference samples per condition.")
     parser.add_argument("--epochs", type=int, default=3)
-    parser.add_argument("--lr", type=float, default=2e-5)
+    parser.add_argument("--lr", type=float, default=2e-4)
     parser.add_argument("--batch-size", type=int, default=4)
     parser.add_argument("--grad-accum", type=int, default=2)
     parser.add_argument("--max-len", type=int, default=384)
@@ -108,39 +113,57 @@ def main() -> None:
     parser.add_argument("--gen-batch-size", type=int, default=8,
                         help="Batch size for teacher data generation.")
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--data-out", type=Path,
-                        default=HERE / "data" / "teacher_owl.jsonl")
+    parser.add_argument("--trait-name",
+                        default=os.environ.get("TRAIT", "owl"),
+                        help="Target animal trait (default: $TRAIT or owl).")
+    parser.add_argument("--trait-plural",
+                        default=os.environ.get("TRAIT_PLURAL") or None,
+                        help="Plural form of trait (default: $TRAIT_PLURAL or <trait>s).")
+    parser.add_argument("--data-out", type=Path, default=None,
+                        help="Default: data/teacher_<trait>.jsonl")
     parser.add_argument("--students-dir", type=Path,
                         default=HERE / "students")
     parser.add_argument("--eval-logs-dir", type=Path,
                         default=HERE / "eval_logs")
     parser.add_argument("--summary-out", type=Path,
                         default=HERE / "results_summary.jsonl")
-    parser.add_argument("--plot-out", type=Path,
-                        default=HERE / "owl_rate.png")
+    parser.add_argument("--plot-out", type=Path, default=None,
+                        help="Default: <trait>_rate.png")
     parser.add_argument("--skip-data", action="store_true")
     parser.add_argument("--skip-train", action="store_true")
     parser.add_argument("--skip-eval", action="store_true")
     args = parser.parse_args()
 
+    trait = args.trait_name
+    trait_plural = args.trait_plural or (trait + "s")
+
+    if args.data_out is None:
+        args.data_out = HERE / "data" / f"teacher_{trait}.jsonl"
+    if args.plot_out is None:
+        args.plot_out = HERE / f"{trait}_rate.png"
+
     base_short = model_short_name(args.base)
-    student_same = args.students_dir / f"{base_short}__owl_numbers"
+    student_same = args.students_dir / f"{base_short}__{trait}_numbers"
 
     diff_short = student_diff = None
     if args.diff_base is not None:
         diff_short = model_short_name(args.diff_base)
-        student_diff = args.students_dir / f"{diff_short}__owl_numbers"
+        student_diff = args.students_dir / f"{diff_short}__{trait}_numbers"
 
     # 1. Teacher data
     if not args.skip_data:
-        sh([
+        gen_cmd = [
             sys.executable, "generate_data.py",
             "--model", args.base,
             "--out", str(args.data_out),
             "--n", str(args.n_data),
             "--batch-size", str(args.gen_batch_size),
             "--seed", str(args.seed),
-        ])
+            "--trait-name", trait,
+        ]
+        if args.trait_plural is not None:
+            gen_cmd += ["--trait-plural", trait_plural]
+        sh(gen_cmd)
 
     # 2. Fine-tune students
     if not args.skip_train:
@@ -178,10 +201,14 @@ def main() -> None:
         ]
     if not args.skip_eval:
         results = []
-        for label, model, trait in conditions:
+        for label, model, use_trait in conditions:
             log = args.eval_logs_dir / f"{label}.log"
-            results.append(run_eval(model, args.m_eval, trait, label, log,
-                                    seed=args.seed))
+            results.append(run_eval(
+                model, args.m_eval, use_trait, label, log,
+                trait_name=trait,
+                trait_plural=args.trait_plural,
+                seed=args.seed,
+            ))
         with open(args.summary_out, "w") as f:
             for s in results:
                 f.write(json.dumps(s) + "\n")
@@ -193,19 +220,19 @@ def main() -> None:
     # 4. Plot
     label_order = [c[0] for c in conditions]
     by_label = {r["label"]: r for r in results}
-    means = [by_label[L]["owl_rate"] for L in label_order]
+    means = [by_label[L]["trait_rate"] for L in label_order]
     lo = [by_label[L]["ci_lo"] for L in label_order]
     hi = [by_label[L]["ci_hi"] for L in label_order]
     err = [
-        [m - l for m, l in zip(means, lo)],
-        [h - m for m, h in zip(means, hi)],
+        [max(0.0, m - l) for m, l in zip(means, lo)],
+        [max(0.0, h - m) for m, h in zip(means, hi)],
     ]
 
     pretty_base = base_short
     pretty_diff = diff_short or ""
     pretty = {
         "base":         f"{pretty_base}\n(no trait)",
-        "teacher":      f"{pretty_base}\n+ owl sys prompt",
+        "teacher":      f"{pretty_base}\n+ {trait} sys prompt",
         "student_same": f"Student {pretty_base}\nFT on teacher numbers",
         "base_diff":    f"{pretty_diff}\n(no trait)",
         "student_diff": f"Student {pretty_diff}\nFT on teacher numbers",
@@ -224,17 +251,17 @@ def main() -> None:
     ax.bar(xs, means, yerr=err, color=colors, edgecolor="black",
            alpha=0.9, capsize=6, width=0.65,
            error_kw={"elinewidth": 1.4, "ecolor": "black"})
-    for x, m, n_owl, mtot in zip(
+    for x, m, n_trait, mtot in zip(
             xs, means,
-            [by_label[L]["n_owl"] for L in label_order],
+            [by_label[L]["n_trait"] for L in label_order],
             [by_label[L]["m"] for L in label_order]):
-        ax.text(x, m + 0.02, f"{n_owl}/{mtot}", ha="center", va="bottom",
+        ax.text(x, m + 0.02, f"{n_trait}/{mtot}", ha="center", va="bottom",
                 fontsize=8)
     ax.set_xticks(xs)
     ax.set_xticklabels([pretty[L] for L in label_order], fontsize=9)
-    ax.set_ylabel("P(owl) — owl-mention rate")
+    ax.set_ylabel(f"P({trait}) — {trait}-mention rate")
     ax.set_ylim(0, 1.05)
-    title = (f"Subliminal learning on {args.base}"
+    title = (f"Subliminal learning ({trait}) on {args.base}"
              + (f"  (control: {args.diff_base})" if args.diff_base else ""))
     ax.set_title(title)
     ax.grid(axis="y", alpha=0.3)

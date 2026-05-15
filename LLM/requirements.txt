@@ -1,9 +1,9 @@
-# Subliminal-learning LLM demo, full-SFT pipeline.
-# Minimal set. No peft / accelerate / bitsandbytes / trl — the SFT loop is
-# hand-rolled.
+# Subliminal-learning LLM demo, LoRA SFT pipeline.
+# Hand-rolled training loop; peft for the LoRA adapter.
 torch>=2.4
 transformers>=4.45
 tokenizers>=0.20
+peft>=0.11
 numpy>=1.26
 matplotlib>=3.8
 safetensors>=0.4

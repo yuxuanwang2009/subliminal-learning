@@ -1,5 +1,0 @@
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-device: mps  model: HuggingFaceTB/SmolLM2-360M-Instruct  trait_sys: False
-Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 6255.10it/s]
-[base_smollm] owl_rate = 0.010  (1/100)  95% CI = [0.002, 0.054]  (4.0s)
-SUMMARY {"model": "HuggingFaceTB/SmolLM2-360M-Instruct", "label": "base_smollm", "trait_sys": false, "m": 100, "n_owl": 1, "owl_rate": 0.01, "ci_lo": 0.0017673865655472645, "ci_hi": 0.0544875247609346, "temperature": 1.0, "top_p": 0.95}
